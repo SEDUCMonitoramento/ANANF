@@ -1,71 +1,90 @@
-//Lista de Presença Reunião de Pais
+/**
+ * Lista de Presença Reunião de Pais
+ */
 function ImpListPRES() {
-  Retorna()
-  var spreadsheet = SpreadsheetApp.getActive();
-  spreadsheet.getRange('F:S').activate();
-  spreadsheet.getActiveSheet().hideColumns(spreadsheet.getActiveRange().getColumn(), spreadsheet.getActiveRange().getNumColumns());
-  spreadsheet.getRange('T:T').activate();
-  spreadsheet.getRange('A2:U50').activate();
-};
+  configurarImpressao('F:S', 'T:T', 'A2:U50');
+}
 
-
-// Lista de Entrega de Uniformes
+/**
+ * Lista de Entrega de Uniformes
+ */
 function ImpListUni() {
-  Retorna();
-  var spreadsheet = SpreadsheetApp.getActive();
-  spreadsheet.getRange('T:U').activate();
-  spreadsheet.getActiveSheet().hideColumns(spreadsheet.getActiveRange().getColumn(), spreadsheet.getActiveRange().getNumColumns());
-  spreadsheet.getRange('V:V').activate();
-  spreadsheet.getRange('A2:X50').activate();
-};
+  configurarImpressao('T:U', 'V:V', 'A2:X50');
+}
 
-// Lista de Kit Material Escolar
-function ImpListUni() {
-  Retorna()
-  var spreadsheet = SpreadsheetApp.getActive();
-  spreadsheet.getRange('T:X').activate();
-  spreadsheet.getActiveSheet().hideColumns(spreadsheet.getActiveRange().getColumn(), spreadsheet.getActiveRange().getNumColumns());
-  spreadsheet.getRange('Y:Y').activate();
-  spreadsheet.getRange('A2:AA50').activate();
-};
+/**
+ * Lista de Kit Material Escolar
+ */
+function ImpListKit() {
+  configurarImpressao('T:X', 'Y:Y', 'A2:AA50');
+}
 
-//function ImpListPERSO() {
-  //var spreadsheet = SpreadsheetApp.getActive();
-  //spreadsheet.getRange('T:AD').activate();
-  //spreadsheet.getActiveSheet().hideColumns(spreadsheet.getActiveRange().getColumn(), spreadsheet.getActiveRange().getNumColumns());
-  //spreadsheet.getRange('AE:AE').activate();
-  //spreadsheet.getActiveSheet().hideColumns(spreadsheet.getActiveRange().getColumn(), spreadsheet.getActiveRange().getNumColumns());
-  //spreadsheet.getRange('AF:AF').activate();
-  //spreadsheet.getRange('A7:50').activate();
-//};
-
-
-//Lista de Contatos do Alunos
+/**
+ * Lista de Contatos do Alunos
+ */
 function ImpListCont() {
-  Retorna()
-  var spreadsheet = SpreadsheetApp.getActive();
-  spreadsheet.getRange('T:AA').activate();
-  spreadsheet.getActiveSheet().hideColumns(spreadsheet.getActiveRange().getColumn(), spreadsheet.getActiveRange().getNumColumns());
-  spreadsheet.getRange('AB:AB').activate();
-  spreadsheet.getRange('A2:AD50').activate();
-};
+  configurarImpressao('T:AA', 'AB:AB', 'A2:AD50');
+}
+
+/**
+ * Função Auxiliar Centralizada (DRY)
+ * Responsável por configurar a visualização para impressão
+ * 
+ * @param {string} colunasOcultar - Intervalo de colunas para ocultar (ex: 'F:S')
+ * @param {string} colunaAtivar - Coluna para ativar/focar (ex: 'T:T')
+ * @param {string} areaImpressao - Área final de impressão para selecionar (ex: 'A2:U50')
+ */
+function configurarImpressao(colunasOcultar, colunaAtivar, areaImpressao) {
+  abrir_IMP_List();
+  Retorna_colunas();
+
+  const spreadsheet = SpreadsheetApp.getActive();
+  const sheet = spreadsheet.getActiveSheet();
+
+  // 3. Oculta as colunas especificadas
+  if (colunasOcultar) {
+    const range = spreadsheet.getRange(colunasOcultar);
+    range.activate();
+    sheet.hideColumns(range.getColumn(), range.getNumColumns());
+  }
+
+  // 4. Ativa a coluna de foco (opcional, mas mantido do original)
+  if (colunaAtivar) {
+    spreadsheet.getRange(colunaAtivar).activate();
+  }
+
+  // 5. Seleciona a área final de impressão
+  if (areaImpressao) {
+    spreadsheet.getRange(areaImpressao).activate();
+  }
+}
 
 function InterImpress() {
   var spreadsheet = SpreadsheetApp.getActive();
   spreadsheet.getRange('A7:AA70').activate();
-};
+}
 
-function Retorna() {
+function Retorna_colunas() {
   var spreadsheet = SpreadsheetApp.getActive();
+  // Mantido lógica original: Ativa T, mostra 13 colunas a partir da 20 (T), ativa T1.
   spreadsheet.getRange('T:T').activate();
   spreadsheet.getActiveSheet().showColumns(20, 13);
   spreadsheet.getRange('T1').activate();
   SpreadsheetApp.flush();
+}
 
-};
+function abrir_IMP_List() {
+  var spreadsheet = SpreadsheetApp.getActive();
+  var sheet = spreadsheet.getSheetByName("IMP_List");
+  if (sheet) {
+    sheet.activate();
+  } else {
+    SpreadsheetApp.getUi().alert("Aba 'IMP_List' não encontrada!");
+  }
+}
 
 function proteSALA() {
   var spreadsheet = SpreadsheetApp.getActive();
   spreadsheet.getRange('1:6').activate();
   var protection = spreadsheet.getRange('1:6').protect();
-};
+}

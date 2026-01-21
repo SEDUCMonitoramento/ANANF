@@ -16,7 +16,7 @@ function onOpen(e) {
   ui.createMenu("Imprimir Listas")
     .addItem("Lista de presença", "ImpListPRES")
     .addItem("Lista entrega de uniformes", "ImpListUni")
-    .addItem("Lista entrega de Kit Escola", "ImpListUni")
+    .addItem("Lista entrega de Kit Escola", "ImpListKit")
     .addItem("Lista contatos dos alunos", "ImpListCont")
     .addSeparator()
     .addItem("LIMPAR SELEÇÃO", "Retorna")
