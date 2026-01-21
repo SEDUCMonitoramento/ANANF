@@ -19,7 +19,7 @@ function onOpen(e) {
     .addItem("Lista entrega de Kit Escola", "ImpListKit")
     .addItem("Lista contatos dos alunos", "ImpListCont")
     .addSeparator()
-    .addItem("LIMPAR SELEÇÃO", "Retorna")
+    .addItem("LIMPAR SELEÇÃO", "Retorna_colunas")
     .addToUi();
 
   // Menu: ANANF

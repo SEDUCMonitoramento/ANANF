@@ -41,19 +41,16 @@ function configurarImpressao(colunasOcultar, colunaAtivar, areaImpressao) {
   const spreadsheet = SpreadsheetApp.getActive();
   const sheet = spreadsheet.getActiveSheet();
 
-  // 3. Oculta as colunas especificadas
   if (colunasOcultar) {
     const range = spreadsheet.getRange(colunasOcultar);
     range.activate();
     sheet.hideColumns(range.getColumn(), range.getNumColumns());
   }
 
-  // 4. Ativa a coluna de foco (opcional, mas mantido do original)
   if (colunaAtivar) {
     spreadsheet.getRange(colunaAtivar).activate();
   }
 
-  // 5. Seleciona a área final de impressão
   if (areaImpressao) {
     spreadsheet.getRange(areaImpressao).activate();
   }
@@ -81,10 +78,4 @@ function abrir_IMP_List() {
   } else {
     SpreadsheetApp.getUi().alert("Aba 'IMP_List' não encontrada!");
   }
-}
-
-function proteSALA() {
-  var spreadsheet = SpreadsheetApp.getActive();
-  spreadsheet.getRange('1:6').activate();
-  var protection = spreadsheet.getRange('1:6').protect();
 }
