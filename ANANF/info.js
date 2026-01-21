@@ -6,7 +6,7 @@
 const DADOS_ANANF = {
     // DADOS DA ESCOLA
     nomeEscola: "D6",
-    EnderecoEscola: "D7",
+    EnderecoEscola: "E7",
     telefoneEscola: "AA7",
     emailEscola: "D8",
 
