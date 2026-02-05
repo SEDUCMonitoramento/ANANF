@@ -20,7 +20,6 @@
  */
 function criarTurmas() {
   const inicioScript = new Date();
-  Logger.log('═══════════════════════════════════════════════════════');
   Logger.log('[INICIO] Criando turmas...');
 
   const planilha = SpreadsheetApp.getActiveSpreadsheet();
@@ -87,10 +86,10 @@ function criarTurmas() {
   Logger.log(`[OK] Fórmula QUERY da aba ALL atualizada (${new Date() - inicioQuery}ms)`);
 
   const tempoTotal = new Date() - inicioScript;
-  Logger.log('=======================================================');
+  Logger.log('═══════════════════════════════════════════════════════');
   Logger.log(`[SUCESSO] ${turmasParaCriar.length} turma(s) criada(s) com sucesso!`);
   Logger.log(`[TEMPO] Total: ${(tempoTotal / 1000).toFixed(1)}s (${tempoTotal}ms)`);
-  Logger.log('=======================================================');
+  Logger.log('═══════════════════════════════════════════════════════');
 }
 
 /**
