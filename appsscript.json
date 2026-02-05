@@ -1,43 +1,6 @@
 {
   "timeZone": "America/New_York",
-  "dependencies": {
-  },
+  "dependencies": {},
   "exceptionLogging": "STACKDRIVER",
-  "runtimeVersion": "V8",
-  "sheets": {
-    "macros": [{
-      "menuName": "nomeaba",
-      "functionName": "nomeaba"
-    }, {
-      "menuName": "Macro sem título",
-      "functionName": "myFunction",
-      "defaultShortcut": "Ctrl+Alt+Shift+9"
-    }, {
-      "menuName": "criarTurmas",
-      "functionName": "criarTurmas"
-    }, {
-      "menuName": "tirarProtecao",
-      "functionName": "tirarProtecao"
-    }, {
-      "menuName": "InterImpress",
-      "functionName": "InterImpress"
-    }, {
-      "menuName": "Insere7lin",
-      "functionName": "Insere7lin",
-      "defaultShortcut": "Ctrl+Alt+Shift+8"
-    }, {
-      "menuName": "Ins6Lin",
-      "functionName": "Ins6Lin",
-      "defaultShortcut": "Ctrl+Alt+Shift+7"
-    }, {
-      "menuName": "removerValor",
-      "functionName": "removerValor"
-    }, {
-      "menuName": "Exporta pag",
-      "functionName": "Exportapag"
-    }, {
-      "menuName": "BaseAnanf",
-      "functionName": "BaseAnanf"
-    }]
-  }
+  "runtimeVersion": "V8"
 }
