@@ -13,7 +13,7 @@ function limparEOcultarLinhas() {
   let linhaInicio = totalPreenchidos + 4;
 
   if (linhaInicio <= 41) {
-    abaPiloto.getRange(linhaInicio, 1, 42 - linhaInicio, abaPiloto.getLastColumn()).clearContent();
+    abaPiloto.getRange(linhaInicio, 1, 40 - linhaInicio, abaPiloto.getLastColumn()).clearContent();
 
     abaPiloto.hideRows(linhaInicio, 42 - linhaInicio);
 

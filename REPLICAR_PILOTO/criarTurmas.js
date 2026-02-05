@@ -1,91 +1,79 @@
 /**
- * Script para criação e proteção de abas de turmas
+ * Script otimizado para criação e proteção de abas de turmas usando Sheets API v4
  * 
- * Estratégia de proteção:
- * - Bloqueia toda a aba
- * - Libera apenas áreas específicas para edição
+ * Otimizações:
+ * - Duplicação em lote (batch) de múltiplas abas
+ * - Configuração em lote de propriedades
+ * - Proteções em lote com unprotectedRanges
+ * - Redução drástica de chamadas à API
  * 
- * Áreas liberadas:
- * - A7:R70 (dados principais)
- * - AX7:AX70
- * - AA7:AA70
- * - W7:X70
- * - AZ7:BB70
+ * Áreas liberadas para edição:
  * - 1:6 (linhas de cabeçalho)
+ * - A7:R70 (dados principais)
+ * - W7:X70
+ * - AA7:AA70
+ * - AX7:AX70
+ * - AZ7:BB70
  */
 
 /**
- * Função principal para criar todas as turmas
+ * Função principal para criar todas as turmas de forma otimizada
  */
 function criarTurmas() {
   const planilha = SpreadsheetApp.getActiveSpreadsheet();
+  const planilhaId = planilha.getId();
+  const nomeAbaBase = 'Base';
 
   // 1. Limpar e ocultar linhas da página Piloto
   limparEOcultarLinhas();
 
-  // 2. Obtém a lista de turmas da aba "Piloto"
-  const listaTurmas = obterListaTurmas(planilha);
-
-  // 3. Cria cada turma
-  listaTurmas.forEach((nomeTurma, indice) => {
-    Logger.log(`Criando turma ${indice + 1}/${listaTurmas.length}: ${nomeTurma}`);
-    criarTurma(planilha, nomeTurma);
-  });
-
-  // 4. Fazer a ALL
-  escreverFormula_QUERY_das_ALL();
-
-  Logger.log(`✓ ${listaTurmas.length} turma(s) criada(s) com sucesso!`);
-}
-
-/**
- * Cria uma aba de turma baseada no template "Base"
- * @param {Spreadsheet} planilha - A planilha ativa
- * @param {string} nomeTurma - Nome da turma a ser criada
- */
-function criarTurma(planilha, nomeTurma) {
-  const abaBase = planilha.getSheetByName("Base");
-  let abaTurma = planilha.getSheetByName(nomeTurma);
-
-  // Criar cópia da aba "Base" se a turma ainda não existir
-  if (!abaTurma) {
-    abaTurma = abaBase.copyTo(planilha);
-    abaTurma.setName(nomeTurma).showSheet();
-    abaTurma.getRange("A5").setValue(nomeTurma);
+  // 2. Verificação de segurança
+  const mapaAbas = construirMapaAbas(planilha);
+  if (!mapaAbas[nomeAbaBase]) {
+    SpreadsheetApp.getUi().alert(`Aba '${nomeAbaBase}' não encontrada!`);
+    return;
   }
 
-  // Aplicar proteções
-  aplicarProtecoes(abaTurma);
+  // 3. Identificar turmas a criar
+  const todasTurmas = obterListaTurmas(planilha);
+  const turmasParaCriar = todasTurmas.filter(nomeTurma => !mapaAbas[nomeTurma]);
+
+  if (!turmasParaCriar.length) {
+    Logger.log('Nenhuma turma nova para criar');
+    escreverFormula_QUERY_das_ALL();
+    return;
+  }
+
+  Logger.log(`Criando ${turmasParaCriar.length} turma(s) em lote...`);
+
+  // 4. Duplicação em lote
+  const abaBaseId = mapaAbas[nomeAbaBase].getSheetId();
+  const indiceInsercao = obterIndiceInsercao(planilha, nomeAbaBase);
+  const idsNovasAbas = duplicarAbasEmLote(planilhaId, abaBaseId, turmasParaCriar, indiceInsercao);
+
+  // 5. Configuração em lote (propriedades + proteções)
+  configurarAbasEmLote(planilhaId, idsNovasAbas);
+
+  // 6. Escrever nomes das turmas em lote
+  escreverNomesEmLote(planilhaId, turmasParaCriar);
+
+  // 7. Fazer a ALL
+  escreverFormula_QUERY_das_ALL();
+
+  Logger.log(`✓ ${turmasParaCriar.length} turma(s) criada(s) com sucesso!`);
 }
 
 /**
- * Aplica proteções na aba da turma
- * Estratégia: bloqueia tudo e libera áreas específicas
- * @param {Sheet} abaTurma - A aba da turma a ser protegida
+ * Constrói um mapa de abas para verificação rápida
+ * @param {Spreadsheet} planilha - A planilha ativa
+ * @returns {Object} Mapa nome -> Sheet
  */
-function aplicarProtecoes(abaTurma) {
-  const emailUsuario = Session.getActiveUser().getEmail();
-
-  // Remove proteções existentes
-  const protecoesExistentes = abaTurma.getProtections(SpreadsheetApp.ProtectionType.SHEET);
-  protecoesExistentes.forEach(protecao => protecao.remove());
-
-  // Protege toda a aba
-  const protecaoGeral = abaTurma.protect();
-  protecaoGeral.removeEditors(protecaoGeral.getEditors());
-  protecaoGeral.addEditor(emailUsuario);
-
-  // Define áreas desprotegidas (liberadas para edição)
-  const areasDesprotegidas = [
-    abaTurma.getRange('A7:R70'),      // Dados principais
-    abaTurma.getRange('AX7:AX70'),    // Coluna AX
-    abaTurma.getRange('AA7:AA70'),    // Coluna AA
-    abaTurma.getRange('W7:X70'),      // Colunas W e X
-    abaTurma.getRange('AZ7:BB70'),    // Colunas AZ até BB
-    abaTurma.getRange('1:6')          // Linhas de cabeçalho
-  ];
-
-  protecaoGeral.setUnprotectedRanges(areasDesprotegidas);
+function construirMapaAbas(planilha) {
+  const mapa = {};
+  planilha.getSheets().forEach(aba => {
+    mapa[aba.getName().trim()] = aba;
+  });
+  return mapa;
 }
 
 /**
@@ -95,17 +83,112 @@ function aplicarProtecoes(abaTurma) {
  */
 function obterListaTurmas(planilha) {
   const abaPiloto = planilha.getSheetByName("Piloto");
-  const listaTurmas = [];
+  const valores = abaPiloto.getRange("C4:C39").getValues();
 
-  // Lê os valores da coluna C (linhas 4 a 39)
-  for (let linha = 4; linha <= 39; linha++) {
-    const valorCelula = abaPiloto.getRange("C" + linha).getValue();
-    if (valorCelula) {
-      listaTurmas.push(valorCelula);
+  return valores
+    .flat()
+    .filter(valor => valor && valor.toString().trim() !== '')
+    .map(valor => valor.toString().trim());
+}
+
+/**
+ * Obtém o índice de inserção das novas abas
+ * @param {Spreadsheet} planilha - A planilha ativa
+ * @param {string} nomeAbaBase - Nome da aba base
+ * @returns {number} Índice onde inserir as novas abas
+ */
+function obterIndiceInsercao(planilha, nomeAbaBase) {
+  const abas = planilha.getSheets();
+  const indice = abas.findIndex(aba => aba.getName().trim() === nomeAbaBase);
+  return indice < 0 ? abas.length : indice + 1;
+}
+
+/**
+ * Duplica múltiplas abas em uma única chamada de API
+ * @param {string} planilhaId - ID da planilha
+ * @param {number} abaBaseId - ID da aba base
+ * @param {Array<string>} nomesTurmas - Lista de nomes das turmas
+ * @param {number} indiceInsercao - Índice de inserção
+ * @returns {Array<number>} IDs das novas abas criadas
+ */
+function duplicarAbasEmLote(planilhaId, abaBaseId, nomesTurmas, indiceInsercao) {
+  const requisicoesDuplicacao = nomesTurmas.map((nomeTurma, indice) => ({
+    duplicateSheet: {
+      sourceSheetId: abaBaseId,
+      newSheetName: nomeTurma,
+      insertSheetIndex: indiceInsercao + indice
     }
-  }
+  }));
 
-  return listaTurmas;
+  const resposta = Sheets.Spreadsheets.batchUpdate({
+    requests: requisicoesDuplicacao
+  }, planilhaId);
+
+  return resposta.replies.map(r => r.duplicateSheet.properties.sheetId);
+}
+
+/**
+ * Configura propriedades e proteções das abas em lote
+ * @param {string} planilhaId - ID da planilha
+ * @param {Array<number>} idsAbas - IDs das abas a configurar
+ */
+function configurarAbasEmLote(planilhaId, idsAbas) {
+  const emailUsuario = Session.getActiveUser().getEmail();
+  const requisicoesConfiguracao = [];
+
+  idsAbas.forEach(idAba => {
+    // Visibilidade
+    requisicoesConfiguracao.push({
+      updateSheetProperties: {
+        properties: {
+          sheetId: idAba,
+          hidden: false
+        },
+        fields: 'hidden'
+      }
+    });
+
+    // Proteção com áreas desprotegidas
+    requisicoesConfiguracao.push({
+      addProtectedRange: {
+        protectedRange: {
+          range: { sheetId: idAba },
+          unprotectedRanges: [
+            { sheetId: idAba, startRowIndex: 6, endRowIndex: 70, startColumnIndex: 0, endColumnIndex: 18 },    // A7:R70
+            { sheetId: idAba, startRowIndex: 6, endRowIndex: 70, startColumnIndex: 49, endColumnIndex: 50 },   // AX7:AX70
+            { sheetId: idAba, startRowIndex: 6, endRowIndex: 70, startColumnIndex: 26, endColumnIndex: 27 },   // AA7:AA70
+            { sheetId: idAba, startRowIndex: 6, endRowIndex: 70, startColumnIndex: 22, endColumnIndex: 24 },   // W7:X70
+            { sheetId: idAba, startRowIndex: 6, endRowIndex: 70, startColumnIndex: 51, endColumnIndex: 54 },   // AZ7:BB70
+            { sheetId: idAba, startRowIndex: 0, endRowIndex: 6 }                                               // 1:6
+          ],
+          editors: { users: [emailUsuario] }
+        }
+      }
+    });
+  });
+
+  if (requisicoesConfiguracao.length) {
+    Sheets.Spreadsheets.batchUpdate({
+      requests: requisicoesConfiguracao
+    }, planilhaId);
+  }
+}
+
+/**
+ * Escreve os nomes das turmas na célula A5 de cada aba em lote
+ * @param {string} planilhaId - ID da planilha
+ * @param {Array<string>} nomesTurmas - Lista de nomes das turmas
+ */
+function escreverNomesEmLote(planilhaId, nomesTurmas) {
+  const intervalosValores = nomesTurmas.map(nomeTurma => ({
+    range: `${nomeTurma}!A5`,
+    values: [[nomeTurma]]
+  }));
+
+  Sheets.Spreadsheets.Values.batchUpdate({
+    valueInputOption: 'RAW',
+    data: intervalosValores
+  }, planilhaId);
 }
 
 /**
