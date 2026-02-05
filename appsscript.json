@@ -2,7 +2,6 @@
   "timeZone": "America/Sao_Paulo",
   "dependencies": {
     "enabledAdvancedServices": [
-      
       {
         "userSymbol": "Drive",
         "serviceId": "drive",
