@@ -28,7 +28,7 @@ function onOpen(e) {
 }
 
 function piloto_ir() {
-  abrir_aba_ativando("Piloto"); s
+  abrir_aba_ativando("Piloto");
 }
 
 function inicial_ir() {

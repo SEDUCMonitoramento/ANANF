@@ -6,7 +6,7 @@ function limparEOcultarLinhas() {
     throw new Error("A aba 'Piloto' não foi encontrada.");
   }
 
-  let intervaloValores = abaPiloto.getRange("C4:C41").getValues();
+  let intervaloValores = abaPiloto.getRange("C4:C39").getValues();
 
   let totalPreenchidos = intervaloValores.filter(linha => linha[0] !== "").length;
 

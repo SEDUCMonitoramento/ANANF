@@ -1,72 +1,127 @@
 /**
- * Excluir linkTURMAS após replicar Pilotos
+ * Script para criação e proteção de abas de turmas
+ * 
+ * Estratégia de proteção:
+ * - Bloqueia toda a aba
+ * - Libera apenas áreas específicas para edição
+ * 
+ * Áreas liberadas:
+ * - A7:R70 (dados principais)
+ * - AX7:AX70
+ * - AA7:AA70
+ * - W7:X70
+ * - AZ7:BB70
+ * - 1:6 (linhas de cabeçalho)
  */
 
-// Variável global para acessar a planilha ativa
-let ss = SpreadsheetApp.getActiveSpreadsheet();
-
+/**
+ * Função principal para criar todas as turmas
+ */
 function criarTurmas() {
-  //1. Limpar e o OcultarLinhas da página Piloto;
+  const planilha = SpreadsheetApp.getActiveSpreadsheet();
+
+  // 1. Limpar e ocultar linhas da página Piloto
   limparEOcultarLinhas();
+
   // 2. Obtém a lista de turmas da aba "Piloto"
-  let turmas = getTurmas();
+  const listaTurmas = obterListaTurmas(planilha);
+
   // 3. Cria cada turma
-  for (let i = 0; i < turmas.length; i++) {
-    Logger.log(`Fazendo a turma ${turmas[i]}`)
-    criarTurma(turmas[i]);
-  }
-  // 4. Remove proteções das abas existentes antes de recriá-las
-  //tirarProtecao();
-  // 5. Fazer a ALL
-  escreverFormula_QUERY_das_ALL();
-}
-
-function criarTurma(nturma) {
-  let base = ss.getSheetByName("Base");
-  let turma = ss.getSheetByName(nturma)
-  if (!turma){
-    // Criar uma cópia da aba "Base"
-    turma = base.copyTo(ss);
-    turma.setName(nturma).showSheet();
-    turma.getRange("A5").setValue(nturma);
-  }
-  // Proteger a aba
-  let protection = turma.protect();
-  protection.removeEditors(protection.getEditors()); // Remove permissões padrão
-  protection.addEditor(Session.getActiveUser().getEmail()); // Adiciona o usuário ativo
-
-  // Proteger intervalos específicos
-  let protectedRanges = [turma.getRange("1:6"), turma.getRange("AB7:AW70"), turma.getRange("AY7:AY70"), turma.getRange("BC7:EB70"), turma.getRange("S7:S70"), turma.getRange("T7:T70"), turma.getRange("U7:U70"), turma.getRange("V7:V70") ];
-
-  protectedRanges.forEach(range => {
-    let rangeProtection = range.protect();
-    rangeProtection.addEditor(Session.getActiveUser().getEmail());
+  listaTurmas.forEach((nomeTurma, indice) => {
+    Logger.log(`Criando turma ${indice + 1}/${listaTurmas.length}: ${nomeTurma}`);
+    criarTurma(planilha, nomeTurma);
   });
-  
+
+  // 4. Fazer a ALL
+  escreverFormula_QUERY_das_ALL();
+
+  Logger.log(`✓ ${listaTurmas.length} turma(s) criada(s) com sucesso!`);
 }
 
-function getTurmas() {
-  // Obtém os nomes das turmas na coluna "C" da aba "Piloto"
-  let sheetPiloto = ss.getSheetByName("Piloto");
-  let turmas = [];
-  for (let i = 4; i <= 39; i++) {
-    let value = sheetPiloto.getRange("C" + i).getValue();
-    if (value) {
-      turmas.push(value);
+/**
+ * Cria uma aba de turma baseada no template "Base"
+ * @param {Spreadsheet} planilha - A planilha ativa
+ * @param {string} nomeTurma - Nome da turma a ser criada
+ */
+function criarTurma(planilha, nomeTurma) {
+  const abaBase = planilha.getSheetByName("Base");
+  let abaTurma = planilha.getSheetByName(nomeTurma);
+
+  // Criar cópia da aba "Base" se a turma ainda não existir
+  if (!abaTurma) {
+    abaTurma = abaBase.copyTo(planilha);
+    abaTurma.setName(nomeTurma).showSheet();
+    abaTurma.getRange("A5").setValue(nomeTurma);
+  }
+
+  // Aplicar proteções
+  aplicarProtecoes(abaTurma);
+}
+
+/**
+ * Aplica proteções na aba da turma
+ * Estratégia: bloqueia tudo e libera áreas específicas
+ * @param {Sheet} abaTurma - A aba da turma a ser protegida
+ */
+function aplicarProtecoes(abaTurma) {
+  const emailUsuario = Session.getActiveUser().getEmail();
+
+  // Remove proteções existentes
+  const protecoesExistentes = abaTurma.getProtections(SpreadsheetApp.ProtectionType.SHEET);
+  protecoesExistentes.forEach(protecao => protecao.remove());
+
+  // Protege toda a aba
+  const protecaoGeral = abaTurma.protect();
+  protecaoGeral.removeEditors(protecaoGeral.getEditors());
+  protecaoGeral.addEditor(emailUsuario);
+
+  // Define áreas desprotegidas (liberadas para edição)
+  const areasDesprotegidas = [
+    abaTurma.getRange('A7:R70'),      // Dados principais
+    abaTurma.getRange('AX7:AX70'),    // Coluna AX
+    abaTurma.getRange('AA7:AA70'),    // Coluna AA
+    abaTurma.getRange('W7:X70'),      // Colunas W e X
+    abaTurma.getRange('AZ7:BB70'),    // Colunas AZ até BB
+    abaTurma.getRange('1:6')          // Linhas de cabeçalho
+  ];
+
+  protecaoGeral.setUnprotectedRanges(areasDesprotegidas);
+}
+
+/**
+ * Obtém a lista de nomes de turmas da aba "Piloto"
+ * @param {Spreadsheet} planilha - A planilha ativa
+ * @returns {Array<string>} Lista com os nomes das turmas
+ */
+function obterListaTurmas(planilha) {
+  const abaPiloto = planilha.getSheetByName("Piloto");
+  const listaTurmas = [];
+
+  // Lê os valores da coluna C (linhas 4 a 39)
+  for (let linha = 4; linha <= 39; linha++) {
+    const valorCelula = abaPiloto.getRange("C" + linha).getValue();
+    if (valorCelula) {
+      listaTurmas.push(valorCelula);
     }
   }
-  return turmas;
+
+  return listaTurmas;
 }
 
-function tirarProtecao() {
-  // Remove proteções das abas listadas na coluna "C" da aba "Piloto"
-  let sheetPiloto = ss.getSheetByName("Piloto");
-  let nomes = sheetPiloto.getRange("C4:C40").getValues().flat(); // Lista de turmas
-  nomes.forEach(nome => {
-    let aba = ss.getSheetByName(nome);
+/**
+ * Remove todas as proteções das abas de turmas listadas na aba "Piloto"
+ * @param {Spreadsheet} planilha - A planilha ativa
+ */
+function removerProtecoes(planilha) {
+  const abaPiloto = planilha.getSheetByName("Piloto");
+  const nomesTurmas = abaPiloto.getRange("C4:C40").getValues().flat();
+
+  nomesTurmas.forEach(nomeTurma => {
+    const aba = planilha.getSheetByName(nomeTurma);
     if (aba) {
-      let protecoes = aba.getProtections(SpreadsheetApp.ProtectionType.SHEET);
+      const protecoes = aba.getProtections(SpreadsheetApp.ProtectionType.SHEET);
       protecoes.forEach(protecao => protecao.remove());
+      Logger.log(`Proteções removidas da aba: ${nomeTurma}`);
     }
   });
 }
